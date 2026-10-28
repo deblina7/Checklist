@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f7f5f0">
+<link rel="manifest" href="./manifest.json">
+<meta name="description" content="A clean, personal daily checklist with eight editable categories.">
+<title>My Daily Checklist</title>
+<style>
+:root{--bg:#f7f5f0;--paper:#fffefa;--ink:#252822;--muted:#73776f;--line:#e7e5dc;--accent:#536b58;--accent-light:#e8eee7;--danger:#a04444;--shadow:0 5px 22px #292d2010}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.45}
+button,input{font:inherit}
+header{padding:calc(18px + env(safe-area-inset-top)) 18px 16px;max-width:760px;margin:auto}
+.brand{display:flex;align-items:center;gap:12px}
+.logo{width:48px;height:48px;flex:none;border-radius:15px;background:var(--accent);display:grid;place-items:center;color:white;box-shadow:var(--shadow)}
+h1{font-size:1.35rem;line-height:1.2;margin:0 0 4px;letter-spacing:-.03em}
+.subtitle{font-size:.88rem;color:var(--muted)}
+.summary{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:18px}
+.progress-wrap{height:7px;border-radius:99px;background:#e5e5dc;overflow:hidden;margin-top:8px}
+.progress{height:100%;width:0;background:var(--accent);border-radius:99px;transition:width .2s}
+main{max-width:760px;margin:auto;padding:0 14px 40px}
+.tools{display:flex;gap:8px;flex-wrap:wrap;margin:2px 0 14px}
+.btn{border:1px solid var(--line);background:var(--paper);color:var(--ink);padding:9px 12px;border-radius:12px;cursor:pointer;font-weight:600;font-size:.9rem}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn:active{transform:scale(.98)}
+.category{background:var(--paper);border:1px solid var(--line);border-radius:17px;padding:14px;margin:10px 0;box-shadow:var(--shadow)}
+.cat-head{display:flex;align-items:center;gap:8px}
+.cat-title{font-size:1rem;font-weight:750;flex:1;min-width:0;overflow-wrap:anywhere}
+.count{font-size:.78rem;color:var(--muted);white-space:nowrap}
+.iconbtn{border:0;background:transparent;color:var(--muted);font-size:1rem;padding:6px;border-radius:8px;cursor:pointer}
+.iconbtn:hover{background:var(--accent-light)}
+.task-list{margin-top:8px}
+.task{display:flex;align-items:flex-start;gap:10px;padding:10px 2px;border-bottom:1px solid #f0efe8}
+.task:last-child{border-bottom:0}
+.task input{appearance:none;width:21px;height:21px;border:1.7px solid #b7bdb2;border-radius:7px;flex:none;margin:1px 0 0;display:grid;place-items:center;cursor:pointer}
+.task input:checked{background:var(--accent);border-color:var(--accent)}
+.task input:checked:after{content:"✓";color:white;font-size:15px;font-weight:800}
+.task label{flex:1;overflow-wrap:anywhere;cursor:pointer}
+.task.done label{text-decoration:line-through;color:#92958d}
+.task .remove{opacity:.55;font-size:1rem}
+.add-row{display:flex;gap:8px;margin-top:10px}
+.add-row input,.category-form input{min-width:0;flex:1;border:1px solid var(--line);border-radius:11px;background:#fff;padding:10px 11px;color:var(--ink);outline:none}
+.add-row input:focus,.category-form input:focus{border-color:var(--accent)}
+.add-row .btn{padding:8px 13px}
+.category-form{display:flex;gap:8px;margin:12px 0 18px}
+.note{text-align:center;color:var(--muted);font-size:.78rem;padding:14px 8px 0}
+.empty{color:var(--muted);font-size:.85rem;padding:8px 2px}
+dialog{border:1px solid var(--line);border-radius:18px;padding:20px;max-width:calc(100% - 32px);width:420px;background:var(--paper);color:var(--ink);box-shadow:0 20px 80px #0003}
+dialog::backdrop{background:#1e241f66}
+.dialog-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+.small{font-size:.8rem;color:var(--muted)}
+@media(min-width:600px){main{padding:0 20px 50px}.category{padding:17px 18px}header{padding-left:20px;padding-right:20px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <div class="logo" aria-hidden="true">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><rect x="4" y="3" width="16" height="18" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="m7.5 9 1.8 1.8L13 7.2M7.5 15h9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div><h1>My Daily Checklist</h1><div class="subtitle" id="today"></div></div>
+  </div>
+  <div class="summary"><div><strong id="progressText">0 of 0 completed</strong><div class="small">One step at a time.</div></div><button class="btn" id="resetDay">Reset today</button></div>
+  <div class="progress-wrap"><div class="progress" id="progressBar"></div></div>
+</header>
+<main>
+  <div class="tools">
+    <button class="btn" id="collapseAll">Collapse all</button>
+    <button class="btn" id="expandAll">Expand all</button>
+    <button class="btn" id="clearDone">Remove completed tasks</button>
+  </div>
+  <div id="categories"></div>
+  <form class="category-form" id="categoryForm">
+    <input id="categoryInput" maxlength="60" placeholder="Create a new category…" aria-label="New category name">
+    <button class="btn primary" type="submit">＋ Category</button>
+  </form>
+  <div class="note">Your categories and tasks are saved on this device in this browser. Daily checkmarks reset automatically on a new day; task lists stay saved.</div>
+</main>
+<dialog id="confirmDialog">
+  <h2 id="dialogTitle">Are you sure?</h2><p id="dialogText"></p>
+  <div class="dialog-actions"><button class="btn" id="cancelDialog">Cancel</button><button class="btn primary" id="confirmAction">Continue</button></div>
+</dialog>
+<script>
+(() => {
+const STORAGE_KEY = 'myDailyChecklist.v1';
+const defaults = [
+  {name:'Self-care',tasks:[]},
+  {name:'Work/Career',tasks:[]},
+  {name:'Personal Goals',tasks:[]},
+  {name:'Study/Learning',tasks:[]},
+  {name:'Housework',tasks:[]},
+  {name:'Money & Savings',tasks:[]},
+  {name:'Family',tasks:[]},
+  {name:'All at Once',tasks:[]}
+];
+const todayKey = () => { const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
+const uid = () => Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+let state;
+try { state=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null'); } catch(e) { state=null; }
+if(!state || !Array.isArray(state.categories)) state={categories:defaults.map(c=>({...c,id:uid(),tasks:[]})),lastDate:todayKey()};
+state.categories.forEach(c=>{if(!c.id)c.id=uid();if(!Array.isArray(c.tasks))c.tasks=[];c.tasks.forEach(t=>{if(!t.id)t.id=uid();});});
+if(state.lastDate!==todayKey()){state.categories.forEach(c=>c.tasks.forEach(t=>t.done=false));state.lastDate=todayKey();}
+function save(){state.lastDate=todayKey();try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state));}catch(e){alert('Saving is unavailable in this browser mode. Open this page in a regular browser tab and try again.');}}
+const esc=s=>String(s).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+const root=document.getElementById('categories');
+const dateOptions={weekday:'long',month:'long',day:'numeric'};
+document.getElementById('today').textContent=new Date().toLocaleDateString(undefined,dateOptions);
+let collapsed=new Set();
+function render(){
+ root.innerHTML='';
+ state.categories.forEach(cat=>{
+  const total=cat.tasks.length,done=cat.tasks.filter(t=>t.done).length;
+  const section=document.createElement('section');section.className='category';
+  const head=document.createElement('div');head.className='cat-head';
+  const title=document.createElement('div');title.className='cat-title';title.textContent=cat.name;
+  const count=document.createElement('span');count.className='count';count.textContent=`${done}/${total}`;
+  const toggle=document.createElement('button');toggle.className='iconbtn';toggle.title=collapsed.has(cat.id)?'Expand category':'Collapse category';toggle.textContent=collapsed.has(cat.id)?'＋':'−';toggle.setAttribute('aria-label',toggle.title);
+  toggle.onclick=()=>{collapsed.has(cat.id)?collapsed.delete(cat.id):collapsed.add(cat.id);render();};
+  const rename=document.createElement('button');rename.className='iconbtn';rename.textContent='✎';rename.title='Rename category';rename.onclick=()=>{const name=prompt('Rename category:',cat.name);if(name&&name.trim()&&!state.categories.some(c=>c.id!==cat.id&&c.name.toLowerCase()===name.trim().toLowerCase())){cat.name=name.trim();save();render();}};
+  const delCat=document.createElement('button');delCat.className='iconbtn';delCat.textContent='⋯';delCat.title='Category options';delCat.onclick=()=>{const choice=prompt(`Category: ${cat.name}\nType DELETE to remove this category and its tasks, or leave blank to cancel.`);if(choice==='DELETE'){state.categories=state.categories.filter(c=>c.id!==cat.id);save();render();}};
+  head.append(title,count,toggle,rename,delCat);section.append(head);
+  if(!collapsed.has(cat.id)){
+   const list=document.createElement('div');list.className='task-list';
+   if(!total){const empty=document.createElement('div');empty.className='empty';empty.textContent='No tasks yet — add one below.';list.append(empty);}
+   cat.tasks.forEach(task=>{
+    const row=document.createElement('div');row.className='task'+(task.done?' done':'');
+    const cb=document.createElement('input');cb.type='checkbox';cb.checked=!!task.done;cb.id=task.id;cb.setAttribute('aria-label',task.text);cb.onchange=()=>{task.done=cb.checked;save();render();};
+    const label=document.createElement('label');label.htmlFor=task.id;label.textContent=task.text;
+    const rm=document.createElement('button');rm.className='iconbtn remove';rm.textContent='×';rm.title='Delete task';rm.onclick=()=>{if(confirm(`Delete "${task.text}"?`)){cat.tasks=cat.tasks.filter(t=>t.id!==task.id);save();render();}};
+    row.append(cb,label,rm);list.append(row);
+   });
+   const form=document.createElement('form');form.className='add-row';
+   const input=document.createElement('input');input.placeholder='Add a task…';input.maxLength=180;input.setAttribute('aria-label',`Add a task to ${cat.name}`);input.required=true;
+   const add=document.createElement('button');add.className='btn primary';add.type='submit';add.textContent='＋ Add';
+   form.append(input,add);form.onsubmit=e=>{e.preventDefault();const text=input.value.trim();if(text){cat.tasks.push({id:uid(),text,done:false});save();render();}};
+   list.append(form);section.append(list);
+  }
+  root.append(section);
+ });
+ updateProgress();
+}
+function updateProgress(){
+ const tasks=state.categories.flatMap(c=>c.tasks),done=tasks.filter(t=>t.done).length;
+ document.getElementById('progressText').textContent=`${done} of ${tasks.length} completed`;
+ document.getElementById('progressBar').style.width=(tasks.length?done/tasks.length*100:0)+'%';
+}
+document.getElementById('categoryForm').onsubmit=e=>{e.preventDefault();const input=document.getElementById('categoryInput'),name=input.value.trim();if(!name)return;if(state.categories.some(c=>c.name.toLowerCase()===name.toLowerCase())){alert('That category already exists.');return;}state.categories.push({id:uid(),name,tasks:[]});save();input.value='';render();};
+document.getElementById('resetDay').onclick=()=>{if(confirm('Untick every task for a fresh day? Your task lists will stay saved.')){state.categories.forEach(c=>c.tasks.forEach(t=>t.done=false));save();render();}};
+document.getElementById('clearDone').onclick=()=>{if(confirm('Permanently remove all checked tasks?')){state.categories.forEach(c=>c.tasks=c.tasks.filter(t=>!t.done));save();render();}};
+document.getElementById('collapseAll').onclick=()=>{state.categories.forEach(c=>collapsed.add(c.id));render();};
+document.getElementById('expandAll').onclick=()=>{collapsed.clear();render();};
+document.getElementById('cancelDialog').onclick=()=>document.getElementById('confirmDialog').close();
+render();
+})();
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) { navigator.serviceWorker.register('./sw.js').catch(()=>{}); }
+</script>
+</body>
+</html>
